@@ -68,7 +68,7 @@ def extract_text_from_docx(file_path: str) -> tuple[list[str], str]:
     return contents, lang[0:2]
 
 
-def get_contents() -> tuple[list[str], str]:
+def get_contents1() -> tuple[list[str], str]:
     """Get the contents."""
 
     while True:
@@ -85,3 +85,17 @@ def get_contents() -> tuple[list[str], str]:
                 return web_crawler_newspaper(url)
         except Exception as e:
             print("Error:", e)
+def get_contents(url: str) -> tuple[list[str], str]:
+    """Get the contents."""
+    try:
+        if os.path.exists(url):
+            if url.endswith('.pdf'):
+                return extract_text_from_pdf(url)
+            elif url.endswith('.txt'):
+                return extract_text_from_txt(url)
+            elif url.endswith('.docx'):
+                return extract_text_from_docx(url)
+        else:
+            return web_crawler_newspaper(url)
+    except Exception as e:
+        print("Error:", e)

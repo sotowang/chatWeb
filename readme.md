@@ -41,6 +41,8 @@ pip3 install -r requirements.txt
 
 ```
 python3 main.py
+或
+gunicorn -w 10 -b 0.0.0.0:5000 main:app 
 ```
 
 ## Stream模式
@@ -56,6 +58,9 @@ python3 main.py
 - 安装pgvector插件
 
 编译并安装扩展（支持Postgres 11+）
+
+## wsgi
+pip install gunicorn
 
 ```bash
 git clone --branch v0.4.0 https://github.com/pgvector/pgvector.git

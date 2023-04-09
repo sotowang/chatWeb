@@ -1,4 +1,6 @@
 import os.path
+from typing import Optional
+
 import faiss
 import numpy as np
 import pandas as pd
@@ -18,20 +20,20 @@ class Storage(ABC):
 
     # factory method
     @staticmethod
-    def create_storage(cfg: Config) -> 'Storage':
+    def create_storage(cfg: Config, filename: Optional[str] = None) -> 'Storage':
         """Create a storage object."""
         if cfg.use_postgres:
             return _PostgresStorage(cfg)
         else:
-            return _IndexStorage()
+            return _IndexStorage(filename=filename)
 
     @abstractmethod
-    def add(self, text: str, embedding: list[float]):
+    def add(self, text: str, embedding: list[float], filename: str):
         """Add a new embedding."""
         pass
 
     @abstractmethod
-    def add_all(self, embeddings: list[tuple[str, list[float]]]):
+    def add_all(self, embeddings: list[tuple[str, list[float]]], filename: str):
         """Add multiple embeddings."""
         pass
 
@@ -41,7 +43,7 @@ class Storage(ABC):
         pass
 
     @abstractmethod
-    def clear(self):
+    def clear(self, filename: str):
         """Clear the database."""
         pass
 
@@ -49,54 +51,54 @@ class Storage(ABC):
 class _IndexStorage(Storage):
     """IndexStorage class."""
 
-    def __init__(self):
+    def __init__(self, filename=None):
         """Initialize the storage."""
         self.texts = None
         self.index = None
-        self._load()
+        self._load(filename)
 
-    def add(self, text: str, embedding: list[float]):
+    def add(self, text: str, embedding: list[float], filename: str):
         """Add a new embedding."""
         array = np.array([embedding])
         self.texts = pd.concat([self.texts, pd.DataFrame({'index': len(self.texts), 'text': text}, index=[0])])
         self.index.add(array)
-        self._save()
+        self._save(filename)
 
-    def add_all(self, embeddings: list[tuple[str, list[float]]]):
+    def add_all(self, embeddings: list[tuple[str, list[float]]], filename: str):
         """Add multiple embeddings."""
         self.texts = pd.concat([self.texts, pd.DataFrame(
             {'index': len(self.texts) + i, 'text': text} for i, (text, _) in enumerate(embeddings))])
         array = np.array([emb for text, emb in embeddings])
         self.index.add(array)
-        self._save()
+        self._save(filename)
 
     def get_texts(self, embedding: list[float], limit=10) -> list[str]:
         _, indexs = self.index.search(np.array([embedding]), limit)
         return self.texts.iloc[indexs[0]].text.tolist()
 
-    def clear(self):
+    def clear(self, filename: str):
         """Clear the database."""
-        self._delete()
+        self._delete(filename)
 
-    def _save(self):
-        self.texts.to_csv('texts.csv')
-        faiss.write_index(self.index, 'index.bin')
+    def _save(self, filename: str):
+        self.texts.to_csv(f"{filename}.csv")
+        faiss.write_index(self.index, f"{filename}.bin")
 
-    def _load(self):
-        if os.path.exists('texts.csv') and os.path.exists('index.bin'):
-            self.texts = pd.read_csv('texts.csv')
-            self.index = faiss.read_index('index.bin')
+    def _load(self, filename: str):
+        if os.path.exists(filename + '.csv') and os.path.exists(filename + '.bin'):
+            self.texts = pd.read_csv(filename + '.csv')
+            self.index = faiss.read_index(filename + '.bin')
         else:
             self.texts = pd.DataFrame(columns=['index', 'text'])
             self.index = faiss.IndexFlatIP(1536)
 
-    def _delete(self):
+    def _delete(self, filename: str):
         try:
-            os.remove('texts.csv')
-            os.remove('index.bin')
+            os.remove(filename + '.csv')
+            os.remove(filename + '.bin')
         except FileNotFoundError:
             pass
-        self._load()
+        # self._load(filename)
 
 
 class _PostgresStorage(Storage):
@@ -110,12 +112,12 @@ class _PostgresStorage(Storage):
         session = sessionmaker(bind=self._engine)
         self._session = session()
 
-    def add(self, text: str, embedding: list[float]):
+    def add(self, text: str, embedding: list[float], filename: str):
         """Add a new embedding."""
         self._session.add(EmbeddingEntity(text=text, embedding=embedding))
         self._session.commit()
 
-    def add_all(self, embeddings: list[tuple[str, list[float]]]):
+    def add_all(self, embeddings: list[tuple[str, list[float]]], filename: str):
         """Add multiple embeddings."""
         data = [EmbeddingEntity(text=text, embedding=embedding) for text, embedding in embeddings]
         self._session.add_all(data)

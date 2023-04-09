@@ -30,6 +30,7 @@ class AI:
             print("使用的tokens：", response.usage.total_tokens, "，花费：", response.usage.total_tokens / 1000 * 0.002,
                   "美元")
             print(response.choices[0].message.content.strip())
+            return response.choices[0].message.content.strip()
 
     def _num_tokens_from_string(self, string: str) -> int:
         """Returns the number of tokens in a text string."""
@@ -41,7 +42,7 @@ class AI:
         context = self._cut_texts(context)
 
         text = "\n".join(f"{index}. {text}" for index, text in enumerate(context))
-        self._chat_stream([
+        return self._chat_stream([
             {'role': 'system',
              'content': f'你是一个有帮助的AI文章助手，以下是从文中搜索到具有相关性的文章内容片段，相关性从高到底排序：\n\n{text}'},
             {'role': 'user', 'content': query},
@@ -111,7 +112,7 @@ class AI:
         candidate_paragraphs = self._cut_texts(candidate_paragraphs)
 
         text = "\n".join(f"{index}. {text}" for index, text in enumerate(candidate_paragraphs))
-        self._chat_stream([
+        return self._chat_stream([
             {'role': 'system',
              'content': f'你是一个有帮助的AI文章助手，以下是从文中搜索到具有相关性的文章内容片段，相关性从高到底排序，你需要从这些相关内容中总结全文内容，最后的结果需要用中文展示：\n\n{text}\n\n中文总结：'},
         ])
