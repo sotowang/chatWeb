@@ -47,7 +47,7 @@ def run():
             print("=====================================")
             # res = ai.generate_summary(embeddings, num_candidates=100,
             #                           use_sif=lang not in ['zh', 'ja', 'ko', 'hi', 'ar', 'fa'])
-            return ""
+            return str(tokens) # 将 tokens 转换为字符串类型，并将其作为响应返回
 
     except Exception as e:
         print("Error:", e)
@@ -83,9 +83,9 @@ def ask():
         for text in texts[:5]:
             print('\t', text)
         # 3. 把相关片段推给AI，AI会根据这些片段回答问题
-        res = ai.completion(query, texts)
+        res, token = ai.completion(query, texts)
         print("=====================================")
-        return jsonify({'answer': res})
+        return jsonify({'answer': res, 'token': token})
     else:
         response = make_response('docId not found')
         response.status_code = 404
@@ -107,4 +107,3 @@ if __name__ == '__main__':
     # gunicorn_app.app = app
     # gunicorn_app.run()
     # gunicorn_app.run(bind='0.0.0.0:5174')
-

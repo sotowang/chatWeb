@@ -42,7 +42,9 @@ pip3 install -r requirements.txt
 ```
 python3 main.py
 或
-gunicorn -w 10 -b 0.0.0.0:5000 main:app 
+
+gunicorn -w 10 -b 0.0.0.0:5000 main:app --timeout 120
+
 ```
 
 ## Stream模式

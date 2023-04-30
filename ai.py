@@ -27,10 +27,12 @@ class AI:
                     print(chunk.choices[0].delta.content, end='')
             print()
         else:
+            tokens_used = response.usage.total_tokens
+
             print("使用的tokens：", response.usage.total_tokens, "，花费：", response.usage.total_tokens / 1000 * 0.002,
                   "美元")
             print(response.choices[0].message.content.strip())
-            return response.choices[0].message.content.strip()
+            return response.choices[0].message.content.strip(), tokens_used
 
     def _num_tokens_from_string(self, string: str) -> int:
         """Returns the number of tokens in a text string."""
